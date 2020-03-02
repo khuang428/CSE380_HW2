@@ -22,6 +22,28 @@ export class UIController {
         canvas.addEventListener("mousedown", this.mouseDownHandler);
         canvas.addEventListener("mousemove", this.mouseMoveHandler);
         canvas.addEventListener("mouseup", this.mouseUpHandler);
+        canvas.addEventListener("dblclick", this.mouseDClickHandler);
+        canvas.addEventListener("click", this.mouseClickHandler);
+    }
+
+    public mouseDClickHandler = (event: MouseEvent) : void => {
+        let mousePressX : number = event.clientX;
+        let mousePressY : number = event.clientY;
+        let sprite : AnimatedSprite = this.scene.getSpriteAt(mousePressX, mousePressY);
+        if(sprite != null){
+            console.log(`I'm deleting the sprite ${sprite}`);
+            //TODO remove sprite
+        }
+    }
+
+    public mouseClickHandler = (event: MouseEvent) : void => {
+        let mousePressX : number = event.clientX;
+        let mousePressY : number = event.clientY;
+        let sprite : AnimatedSprite = this.scene.getSpriteAt(mousePressX, mousePressY);
+        if(sprite == null){
+            console.log(`I'm making a sprite at ${mousePressX}, ${mousePressY}`);
+            //TODO create sprite random one of 3 kinds :o
+        }
     }
 
     public mouseDownHandler = (event : MouseEvent) : void => {

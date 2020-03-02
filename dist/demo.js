@@ -2297,6 +2297,24 @@ var UIController = function () {
 
         _classCallCheck(this, UIController);
 
+        this.mouseDClickHandler = function (event) {
+            var mousePressX = event.clientX;
+            var mousePressY = event.clientY;
+            var sprite = _this.scene.getSpriteAt(mousePressX, mousePressY);
+            if (sprite != null) {
+                console.log("I'm deleting the sprite " + sprite);
+                //TODO remove sprite
+            }
+        };
+        this.mouseClickHandler = function (event) {
+            var mousePressX = event.clientX;
+            var mousePressY = event.clientY;
+            var sprite = _this.scene.getSpriteAt(mousePressX, mousePressY);
+            if (sprite == null) {
+                console.log("I'm making a sprite at " + mousePressX + ", " + mousePressY);
+                //TODO create sprite random one of 3 kinds :o
+            }
+        };
         this.mouseDownHandler = function (event) {
             var mousePressX = event.clientX;
             var mousePressY = event.clientY;
@@ -2332,6 +2350,8 @@ var UIController = function () {
             canvas.addEventListener("mousedown", this.mouseDownHandler);
             canvas.addEventListener("mousemove", this.mouseMoveHandler);
             canvas.addEventListener("mouseup", this.mouseUpHandler);
+            canvas.addEventListener("click", this.mouseClickHandler);
+            canvas.addEventListener("dblclick", this.mouseDClickHandler);
         }
     }]);
 

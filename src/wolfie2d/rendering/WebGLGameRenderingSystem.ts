@@ -4,7 +4,9 @@
 import {TextRenderer} from './TextRenderer'
 import {WebGLGameSpriteRenderer} from './WebGLGameSpriteRenderer'
 import {AnimatedSprite} from '../scene/sprite/AnimatedSprite'
-import {WebGLGameTexture } from './WebGLGameTexture';
+import {WebGLGameTexture } from './WebGLGameTexture'
+import {WebGLGameCircleRenderer} from './WebGLGameCircleRenderer'
+import {GradientCircle} from '../scene/sprite/GradientCircle'
 
 export class WebGLGameRenderingSystem {
     private renderingCanvas : HTMLCanvasElement;
