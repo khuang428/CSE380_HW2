@@ -12,6 +12,7 @@ export class WebGLGameRenderingSystem {
     private renderingCanvas : HTMLCanvasElement;
     private webGL : WebGLRenderingContext;
     private spriteRenderer : WebGLGameSpriteRenderer;
+    private circleRenderer : WebGLGameCircleRenderer;
     private textRenderer : TextRenderer;
     private canvasWidth : number;
     private canvasHeight : number;
@@ -34,6 +35,10 @@ export class WebGLGameRenderingSystem {
 
     public getSpriteRenderer() : WebGLGameSpriteRenderer {
         return this.spriteRenderer;
+    }
+
+    public getCircleRenderer() : WebGLGameCircleRenderer {
+        return this.circleRenderer;
     }
 
     public getTextRenderer() : TextRenderer {
@@ -79,6 +84,9 @@ export class WebGLGameRenderingSystem {
         // NOW MAKE THE SHADER FOR DRAWING THIS THING
         this.spriteRenderer = new WebGLGameSpriteRenderer();
         this.spriteRenderer.init(this.webGL);
+
+        this.circleRenderer = new WebGLGameCircleRenderer();
+        this.circleRenderer.init(this.webGL);
         
         // THIS WILL STORE OUR TEXT
         this.textRenderer = new TextRenderer(textCanvasId, "serif", 18, "#FFFF00");
@@ -117,12 +125,14 @@ export class WebGLGameRenderingSystem {
         this.webGL.clearColor(r, g, b, a);
     }
 
-    public render(visibleSet : Array<AnimatedSprite>) : void {
+    public render(visibleSprites : Array<AnimatedSprite>, visibleCircles : Array<GradientCircle>) : void {
         // CLEAR THE CANVAS
         this.webGL.clear(this.webGL.COLOR_BUFFER_BIT | this.webGL.DEPTH_BUFFER_BIT);
         
         // RENDER THE SPRITES ON ONE CANVAS
-        this.spriteRenderer.renderAnimatedSprites(this.webGL, this.canvasWidth, this.canvasHeight, visibleSet);
+        this.spriteRenderer.renderAnimatedSprites(this.webGL, this.canvasWidth, this.canvasHeight, visibleSprites);
+
+        this.circleRenderer.renderGradientCircles(this.webGL, this.canvasWidth, this.canvasHeight, visibleCircles);
         
         // THEN THE TEXT ON ANOTHER OVERLAPPING CANVAS
         this.textRenderer.render();

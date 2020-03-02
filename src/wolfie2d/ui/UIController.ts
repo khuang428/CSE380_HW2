@@ -3,9 +3,10 @@
  */
 import {AnimatedSprite} from "../scene/sprite/AnimatedSprite"
 import {SceneGraph} from "../scene/SceneGraph"
+import { SceneObject } from "../scene/SceneObject";
 
 export class UIController {
-    private spriteToDrag : AnimatedSprite;
+    private spriteToDrag : SceneObject;
     private scene : SceneGraph;
     private dragOffsetX : number;
     private dragOffsetY : number;
@@ -29,7 +30,7 @@ export class UIController {
     public mouseDClickHandler = (event: MouseEvent) : void => {
         let mousePressX : number = event.clientX;
         let mousePressY : number = event.clientY;
-        let sprite : AnimatedSprite = this.scene.getSpriteAt(mousePressX, mousePressY);
+        let sprite : SceneObject = this.scene.getSpriteAt(mousePressX, mousePressY);
         if(sprite != null){
             console.log(`I'm deleting the sprite ${sprite}`);
             //TODO remove sprite
@@ -39,7 +40,7 @@ export class UIController {
     public mouseClickHandler = (event: MouseEvent) : void => {
         let mousePressX : number = event.clientX;
         let mousePressY : number = event.clientY;
-        let sprite : AnimatedSprite = this.scene.getSpriteAt(mousePressX, mousePressY);
+        let sprite : SceneObject = this.scene.getSpriteAt(mousePressX, mousePressY);
         if(sprite == null){
             console.log(`I'm making a sprite at ${mousePressX}, ${mousePressY}`);
             //TODO create sprite random one of 3 kinds :o
@@ -49,7 +50,7 @@ export class UIController {
     public mouseDownHandler = (event : MouseEvent) : void => {
         let mousePressX : number = event.clientX;
         let mousePressY : number = event.clientY;
-        let sprite : AnimatedSprite = this.scene.getSpriteAt(mousePressX, mousePressY);
+        let sprite : SceneObject = this.scene.getSpriteAt(mousePressX, mousePressY);
         console.log("mousePressX: " + mousePressX);
         console.log("mousePressY: " + mousePressY);
         console.log("sprite: " + sprite);

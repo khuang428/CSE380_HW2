@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var Game_1 = require("../wolfie2d/Game");
 var TextRenderer_1 = require("../wolfie2d/rendering/TextRenderer");
 var AnimatedSprite_1 = require("../wolfie2d/scene/sprite/AnimatedSprite");
+var GradientCircle_1 = require("../wolfie2d/scene/sprite/GradientCircle");
 // IN THIS EXAMPLE WE'LL HAVE 2 SPRITE TYPES THAT EACH HAVE THE SAME 2 STATES
 // AND WHERE EACH SPRITE TYPE HAS ITS OWN SPRITE SHEET
 var DEMO_SPRITE_TYPES = ['resources/animated_sprites/RedCircleMan.json', 'resources/animated_sprites/MultiColorBlock.json'];
@@ -76,6 +77,13 @@ var AnimatedSpriteDemo = function () {
                     scene.addAnimatedSprite(spriteToAdd);
                 }
             }
+            for (var _i = 0; _i < 5; _i++) {
+                var circleToAdd = new GradientCircle_1.GradientCircle();
+                var _randomX = Math.floor(Math.random() * canvasWidth) - circleToAdd.getDiameter() / 2;
+                var _randomY = Math.floor(Math.random() * canvasHeight) - circleToAdd.getDiameter() / 2;
+                circleToAdd.getPosition().set(_randomX, _randomY, 0.0, 1.0);
+                scene.addGradientCircle(circleToAdd);
+            }
         }
         /*
          * Builds all the text to be displayed in the application.
@@ -85,8 +93,8 @@ var AnimatedSpriteDemo = function () {
         key: "buildText",
         value: function buildText(game) {
             var sceneGraph = game.getSceneGraph();
-            var numSpritesText = new TextRenderer_1.TextToRender("Num Sprites", "", 20, 50, function () {
-                numSpritesText.text = "Number of Sprites: " + sceneGraph.getNumSprites();
+            var numSpritesText = new TextRenderer_1.TextToRender("Num Scene Objects", "", 20, 50, function () {
+                numSpritesText.text = "Number of Scene Objects: " + (sceneGraph.getNumSprites() + sceneGraph.getNumCircles());
             });
             var textRenderer = game.getRenderingSystem().getTextRenderer();
             textRenderer.addTextToRender(numSpritesText);
@@ -108,7 +116,7 @@ demo.buildTestScene(game, function () {
     game.start();
 });
 
-},{"../wolfie2d/Game":2,"../wolfie2d/rendering/TextRenderer":8,"../wolfie2d/scene/sprite/AnimatedSprite":15}],2:[function(require,module,exports){
+},{"../wolfie2d/Game":2,"../wolfie2d/rendering/TextRenderer":8,"../wolfie2d/scene/sprite/AnimatedSprite":16,"../wolfie2d/scene/sprite/GradientCircle":18}],2:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -180,10 +188,9 @@ var Game = function (_GameLoopTemplate_1$G) {
         key: "draw",
         value: function draw(interpolationPercentage) {
             // GET THE VISIBLE SET FROM THE SCENE GRAPH
-            var visibleSprites = void 0;
-            visibleSprites = this.sceneGraph.scope();
+            this.sceneGraph.scope();
             // RENDER THE VISIBLE SET, WHICH SHOULD ALL BE RENDERABLE
-            this.renderingSystem.render(visibleSprites);
+            this.renderingSystem.render(this.sceneGraph.getAnimatedSprites(), this.sceneGraph.getGradientCircles());
         }
         /**
          * Updates the scene.
@@ -213,7 +220,7 @@ var Game = function (_GameLoopTemplate_1$G) {
 
 exports.Game = Game;
 
-},{"./files/ResourceManager":3,"./loop/GameLoopTemplate":4,"./rendering/WebGLGameRenderingSystem":9,"./scene/SceneGraph":13,"./ui/UIController":17}],3:[function(require,module,exports){
+},{"./files/ResourceManager":3,"./loop/GameLoopTemplate":4,"./rendering/WebGLGameRenderingSystem":10,"./scene/SceneGraph":14,"./ui/UIController":19}],3:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -407,7 +414,7 @@ var ResourceManager = function () {
 
 exports.ResourceManager = ResourceManager;
 
-},{"../rendering/WebGLGameTexture":12,"../scene/sprite/AnimatedSpriteType":16}],4:[function(require,module,exports){
+},{"../rendering/WebGLGameTexture":13,"../scene/sprite/AnimatedSpriteType":17}],4:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1517,11 +1524,140 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 Object.defineProperty(exports, "__esModule", { value: true });
+var WebGLGameShader_1 = require("./WebGLGameShader");
+var MathUtilities_1 = require("../math/MathUtilities");
+var Matrix_1 = require("../math/Matrix");
+var Vector3_1 = require("../math/Vector3");
+var CircleDefaults = {
+    A_POSITION: "a_Position",
+    A_VALUE_TO_INTERPOLATE: "a_ValueToInterpolate",
+    U_SPRITE_TRANSFORM: "u_SpriteTransform",
+    NUM_VERTICES: 4,
+    FLOATS_PER_VERTEX: 2,
+    TOTAL_BYTES: 16,
+    VERTEX_POSITION_OFFSET: 0,
+    INDEX_OF_FIRST_VERTEX: 0
+};
+
+var WebGLGameCircleRenderer = function () {
+    function WebGLGameCircleRenderer() {
+        _classCallCheck(this, WebGLGameCircleRenderer);
+    }
+
+    _createClass(WebGLGameCircleRenderer, [{
+        key: "init",
+        value: function init(webGL) {
+            this.shader = new WebGLGameShader_1.WebGLGameShader();
+            var vertexShaderSource = 'precision highp float;\n' + 'attribute vec4 ' + CircleDefaults.A_POSITION + ';\n' + 'attribute vec2 ' + CircleDefaults.A_VALUE_TO_INTERPOLATE + ';\n' + 'varying vec2 val;\n' + 'uniform mat4 ' + CircleDefaults.U_SPRITE_TRANSFORM + ';\n' + 'void main() {\n' + '  val = ' + CircleDefaults.A_VALUE_TO_INTERPOLATE + ';\n' + '  gl_Position = ' + CircleDefaults.U_SPRITE_TRANSFORM + ' * ' + CircleDefaults.A_POSITION + ';\n' + '}\n';
+            var fragmentShaderSource = 'precision highp float;\n' + 'varying vec2 val;\n' + 'void main() {\n' + '  float R = 1.0;\n' + '  float dist = sqrt(dot(val,val));\n' + '  float alpha = 1.0;\n' + '  if(dist > R){\n' + '    discard;\n' + '  }\n' + '  gl_FragColor = vec4(0.0, 0.0, dist, alpha);\n' + '}\n';
+            this.shader.init(webGL, vertexShaderSource, fragmentShaderSource);
+            this.webGLAttributeLocations = {};
+            this.webGLUniformLocations = {};
+            this.loadAttributeLocations(webGL, [CircleDefaults.A_POSITION, CircleDefaults.A_VALUE_TO_INTERPOLATE]);
+            this.loadUniformLocations(webGL, [CircleDefaults.U_SPRITE_TRANSFORM]);
+            this.spriteTransform = new Matrix_1.Matrix(4, 4);
+            this.spriteTranslate = new Vector3_1.Vector3();
+            this.spriteRotate = new Vector3_1.Vector3();
+            this.spriteScale = new Vector3_1.Vector3();
+        }
+    }, {
+        key: "renderGradientCircles",
+        value: function renderGradientCircles(webGL, canvasWidth, canvasHeight, visibleSet) {
+            // SELECT THE ANIMATED SPRITE RENDERING SHADER PROGRAM FOR USE
+            var shaderProgramToUse = this.shader.getProgram();
+            webGL.useProgram(shaderProgramToUse);
+            // AND THEN RENDER EACH ONE
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+                for (var _iterator = visibleSet[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var circle = _step.value;
+
+                    this.renderGradientCircle(webGL, canvasWidth, canvasHeight, circle);
+                }
+            } catch (err) {
+                _didIteratorError = true;
+                _iteratorError = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion && _iterator.return) {
+                        _iterator.return();
+                    }
+                } finally {
+                    if (_didIteratorError) {
+                        throw _iteratorError;
+                    }
+                }
+            }
+        }
+    }, {
+        key: "loadAttributeLocations",
+        value: function loadAttributeLocations(webGL, attributeLocationNames) {
+            for (var i = 0; i < attributeLocationNames.length; i++) {
+                var locationName = attributeLocationNames[i];
+                var location = webGL.getAttribLocation(this.shader.getProgram(), locationName);
+                this.webGLAttributeLocations[locationName] = location;
+            }
+        }
+    }, {
+        key: "loadUniformLocations",
+        value: function loadUniformLocations(webGL, uniformLocationNames) {
+            for (var i = 0; i < uniformLocationNames.length; i++) {
+                var locationName = uniformLocationNames[i];
+                var location = webGL.getUniformLocation(this.shader.getProgram(), locationName);
+                this.webGLUniformLocations[locationName] = location;
+            }
+        }
+    }, {
+        key: "renderGradientCircle",
+        value: function renderGradientCircle(webGL, canvasWidth, canvasHeight, circle) {
+            // CALCULATE HOW MUCH TO TRANSLATE THE QUAD PER THE CIRCLE POSITION
+            var diameter = circle.getDiameter();
+            var circleXInPixels = circle.getPosition().getX() + diameter / 2;
+            var circleYInPixels = circle.getPosition().getY() + diameter / 2;
+            var circleXTranslate = (circleXInPixels - canvasWidth / 2) / (canvasWidth / 2);
+            var circleYTranslate = (circleYInPixels - canvasHeight / 2) / (canvasHeight / 2);
+            this.spriteTranslate.setX(circleXTranslate);
+            this.spriteTranslate.setY(-circleYTranslate);
+            // CALCULATE HOW MUCH TO SCALE THE QUAD PER THE CIRCLE SIZE
+            var defaultWidth = canvasWidth / 2;
+            var defaultHeight = canvasHeight / 2;
+            var scaleX = diameter / defaultWidth;
+            var scaleY = diameter / defaultHeight;
+            this.spriteScale.setX(scaleX);
+            this.spriteScale.setY(scaleY);
+            // @todo - COMBINE THIS WITH THE ROTATE AND SCALE VALUES FROM THE SPRITE
+            MathUtilities_1.MathUtilities.identity(this.spriteTransform);
+            MathUtilities_1.MathUtilities.model(this.spriteTransform, this.spriteTranslate, this.spriteRotate, this.spriteScale);
+            // USE THE UNIFORMS
+            var u_SpriteTransformLocation = this.webGLUniformLocations[CircleDefaults.U_SPRITE_TRANSFORM];
+            webGL.uniformMatrix4fv(u_SpriteTransformLocation, false, this.spriteTransform.getData());
+            // DRAW THE SPRITE AS A TRIANGLE STRIP USING 4 VERTICES, STARTING AT THE START OF THE ARRAY (index 0)
+            webGL.drawArrays(webGL.TRIANGLE_STRIP, CircleDefaults.INDEX_OF_FIRST_VERTEX, CircleDefaults.NUM_VERTICES);
+        }
+    }]);
+
+    return WebGLGameCircleRenderer;
+}();
+
+exports.WebGLGameCircleRenderer = WebGLGameCircleRenderer;
+
+},{"../math/MathUtilities":5,"../math/Matrix":6,"../math/Vector3":7,"./WebGLGameShader":11}],10:[function(require,module,exports){
+"use strict";
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", { value: true });
 /*
  * This serves as the subsystem that manages all game rendering.
  */
 var TextRenderer_1 = require("./TextRenderer");
 var WebGLGameSpriteRenderer_1 = require("./WebGLGameSpriteRenderer");
+var WebGLGameCircleRenderer_1 = require("./WebGLGameCircleRenderer");
 
 var WebGLGameRenderingSystem = function () {
     function WebGLGameRenderingSystem() {
@@ -1552,6 +1688,11 @@ var WebGLGameRenderingSystem = function () {
         key: "getSpriteRenderer",
         value: function getSpriteRenderer() {
             return this.spriteRenderer;
+        }
+    }, {
+        key: "getCircleRenderer",
+        value: function getCircleRenderer() {
+            return this.circleRenderer;
         }
     }, {
         key: "getTextRenderer",
@@ -1591,6 +1732,8 @@ var WebGLGameRenderingSystem = function () {
             // NOW MAKE THE SHADER FOR DRAWING THIS THING
             this.spriteRenderer = new WebGLGameSpriteRenderer_1.WebGLGameSpriteRenderer();
             this.spriteRenderer.init(this.webGL);
+            this.circleRenderer = new WebGLGameCircleRenderer_1.WebGLGameCircleRenderer();
+            this.circleRenderer.init(this.webGL);
             // THIS WILL STORE OUR TEXT
             this.textRenderer = new TextRenderer_1.TextRenderer(textCanvasId, "serif", 18, "#FFFF00");
         }
@@ -1624,11 +1767,12 @@ var WebGLGameRenderingSystem = function () {
         }
     }, {
         key: "render",
-        value: function render(visibleSet) {
+        value: function render(visibleSprites, visibleCircles) {
             // CLEAR THE CANVAS
             this.webGL.clear(this.webGL.COLOR_BUFFER_BIT | this.webGL.DEPTH_BUFFER_BIT);
             // RENDER THE SPRITES ON ONE CANVAS
-            this.spriteRenderer.renderAnimatedSprites(this.webGL, this.canvasWidth, this.canvasHeight, visibleSet);
+            this.spriteRenderer.renderAnimatedSprites(this.webGL, this.canvasWidth, this.canvasHeight, visibleSprites);
+            this.circleRenderer.renderGradientCircles(this.webGL, this.canvasWidth, this.canvasHeight, visibleCircles);
             // THEN THE TEXT ON ANOTHER OVERLAPPING CANVAS
             this.textRenderer.render();
         }
@@ -1639,7 +1783,7 @@ var WebGLGameRenderingSystem = function () {
 
 exports.WebGLGameRenderingSystem = WebGLGameRenderingSystem;
 
-},{"./TextRenderer":8,"./WebGLGameSpriteRenderer":11}],10:[function(require,module,exports){
+},{"./TextRenderer":8,"./WebGLGameCircleRenderer":9,"./WebGLGameSpriteRenderer":12}],11:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1715,7 +1859,7 @@ var WebGLGameShader = function () {
 
 exports.WebGLGameShader = WebGLGameShader;
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1884,7 +2028,7 @@ var WebGLGameSpriteRenderer = function () {
 
 exports.WebGLGameSpriteRenderer = WebGLGameSpriteRenderer;
 
-},{"../math/MathUtilities":5,"../math/Matrix":6,"../math/Vector3":7,"./WebGLGameShader":10}],12:[function(require,module,exports){
+},{"../math/MathUtilities":5,"../math/Matrix":6,"../math/Vector3":7,"./WebGLGameShader":11}],13:[function(require,module,exports){
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -1897,7 +2041,7 @@ var WebGLGameTexture = function WebGLGameTexture() {
 
 exports.WebGLGameTexture = WebGLGameTexture;
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1912,6 +2056,7 @@ var SceneGraph = function () {
 
         // DEFAULT CONSTRUCTOR INITIALIZES OUR DATA STRUCTURES
         this.animatedSprites = new Array();
+        this.gradientCircles = new Array();
         this.visibleSet = new Array();
     }
 
@@ -1921,9 +2066,19 @@ var SceneGraph = function () {
             return this.animatedSprites.length;
         }
     }, {
+        key: "getNumCircles",
+        value: function getNumCircles() {
+            return this.gradientCircles.length;
+        }
+    }, {
         key: "addAnimatedSprite",
         value: function addAnimatedSprite(sprite) {
             this.animatedSprites.push(sprite);
+        }
+    }, {
+        key: "addGradientCircle",
+        value: function addGradientCircle(circle) {
+            this.gradientCircles.push(circle);
         }
     }, {
         key: "getSpriteAt",
@@ -1933,7 +2088,7 @@ var SceneGraph = function () {
             var _iteratorError = undefined;
 
             try {
-                for (var _iterator = this.animatedSprites[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                for (var _iterator = this.visibleSet[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                     var sprite = _step.value;
 
                     if (sprite.contains(testX, testY)) return sprite;
@@ -2024,7 +2179,42 @@ var SceneGraph = function () {
                 }
             }
 
+            var _iteratorNormalCompletion4 = true;
+            var _didIteratorError4 = false;
+            var _iteratorError4 = undefined;
+
+            try {
+                for (var _iterator4 = this.gradientCircles[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                    var circle = _step4.value;
+
+                    this.visibleSet.push(circle);
+                }
+            } catch (err) {
+                _didIteratorError4 = true;
+                _iteratorError4 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion4 && _iterator4.return) {
+                        _iterator4.return();
+                    }
+                } finally {
+                    if (_didIteratorError4) {
+                        throw _iteratorError4;
+                    }
+                }
+            }
+
             return this.visibleSet;
+        }
+    }, {
+        key: "getAnimatedSprites",
+        value: function getAnimatedSprites() {
+            return this.animatedSprites;
+        }
+    }, {
+        key: "getGradientCircles",
+        value: function getGradientCircles() {
+            return this.gradientCircles;
         }
     }]);
 
@@ -2033,7 +2223,7 @@ var SceneGraph = function () {
 
 exports.SceneGraph = SceneGraph;
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -2086,7 +2276,7 @@ var SceneObject = function () {
 
 exports.SceneObject = SceneObject;
 
-},{"../math/Vector3":7}],15:[function(require,module,exports){
+},{"../math/Vector3":7}],16:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -2198,7 +2388,7 @@ var AnimatedSprite = function (_SceneObject_1$SceneO) {
 
 exports.AnimatedSprite = AnimatedSprite;
 
-},{"../SceneObject":14}],16:[function(require,module,exports){
+},{"../SceneObject":15}],17:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -2282,7 +2472,58 @@ var AnimatedSpriteType = function () {
 
 exports.AnimatedSpriteType = AnimatedSpriteType;
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
+"use strict";
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var SceneObject_1 = require("../SceneObject");
+
+var GradientCircle = function (_SceneObject_1$SceneO) {
+    _inherits(GradientCircle, _SceneObject_1$SceneO);
+
+    function GradientCircle() {
+        _classCallCheck(this, GradientCircle);
+
+        var _this = _possibleConstructorReturn(this, (GradientCircle.__proto__ || Object.getPrototypeOf(GradientCircle)).call(this));
+
+        _this.diameter = 250;
+        return _this;
+    }
+
+    _createClass(GradientCircle, [{
+        key: "contains",
+        value: function contains(pointX, pointY) {
+            var spriteLeft = this.getPosition().getX();
+            var spriteRight = this.getPosition().getX() + this.diameter;
+            var spriteTop = this.getPosition().getY();
+            var spriteBottom = this.getPosition().getY() + this.diameter;
+            if (pointX < spriteLeft || spriteRight < pointX || pointY < spriteTop || spriteBottom < pointY) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }, {
+        key: "getDiameter",
+        value: function getDiameter() {
+            return this.diameter;
+        }
+    }]);
+
+    return GradientCircle;
+}(SceneObject_1.SceneObject);
+
+exports.GradientCircle = GradientCircle;
+
+},{"../SceneObject":15}],19:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -2316,6 +2557,7 @@ var UIController = function () {
             }
         };
         this.mouseDownHandler = function (event) {
+            event.stopImmediatePropagation();
             var mousePressX = event.clientX;
             var mousePressY = event.clientY;
             var sprite = _this.scene.getSpriteAt(mousePressX, mousePressY);
@@ -2350,8 +2592,8 @@ var UIController = function () {
             canvas.addEventListener("mousedown", this.mouseDownHandler);
             canvas.addEventListener("mousemove", this.mouseMoveHandler);
             canvas.addEventListener("mouseup", this.mouseUpHandler);
-            canvas.addEventListener("click", this.mouseClickHandler);
             canvas.addEventListener("dblclick", this.mouseDClickHandler);
+            canvas.addEventListener("click", this.mouseClickHandler);
         }
     }]);
 

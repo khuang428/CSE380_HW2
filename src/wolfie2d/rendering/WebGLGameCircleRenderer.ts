@@ -116,9 +116,6 @@ export class WebGLGameCircleRenderer{
         MathUtilities.identity(this.spriteTransform);
         MathUtilities.model(this.spriteTransform, this.spriteTranslate, this.spriteRotate, this.spriteScale);
 
-        // HOOK UP THE ATTRIBUTES
-        let a_PositionLocation : GLuint = this.webGLAttributeLocations[CircleDefaults.A_POSITION];
-
         // USE THE UNIFORMS
         let u_SpriteTransformLocation : WebGLUniformLocation = this.webGLUniformLocations[CircleDefaults.U_SPRITE_TRANSFORM];
         webGL.uniformMatrix4fv(u_SpriteTransformLocation, false, this.spriteTransform.getData());

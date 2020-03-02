@@ -1,11 +1,14 @@
 import {SceneObject} from './SceneObject'
 import {AnimatedSprite} from './sprite/AnimatedSprite'
+import {GradientCircle} from './sprite/GradientCircle'
 
 export class SceneGraph {
     // AND ALL OF THE ANIMATED SPRITES, WHICH ARE NOT STORED
     // SORTED OR IN ANY PARTICULAR ORDER. NOTE THAT ANIMATED SPRITES
     // ARE SCENE OBJECTS
     private animatedSprites : Array<AnimatedSprite>;
+
+    private gradientCircles : Array<GradientCircle>;
 
     // SET OF VISIBLE OBJECTS, NOTE THAT AT THE MOMENT OUR
     // SCENE GRAPH IS QUITE SIMPLE, SO THIS IS THE SAME AS
@@ -15,6 +18,7 @@ export class SceneGraph {
     public constructor() {
         // DEFAULT CONSTRUCTOR INITIALIZES OUR DATA STRUCTURES
         this.animatedSprites = new Array();
+        this.gradientCircles = new Array();
         this.visibleSet = new Array();
     }
 
@@ -22,12 +26,20 @@ export class SceneGraph {
         return this.animatedSprites.length;
     }
 
+    public getNumCircles() : number {
+        return this.gradientCircles.length;
+    }
+
     public addAnimatedSprite(sprite : AnimatedSprite) : void {
         this.animatedSprites.push(sprite);
     }
 
-    public getSpriteAt(testX : number, testY : number) : AnimatedSprite {
-        for (let sprite of this.animatedSprites) {
+    public addGradientCircle(circle : GradientCircle) : void {
+        this.gradientCircles.push(circle);
+    }
+
+    public getSpriteAt(testX : number, testY : number) : SceneObject {
+        for (let sprite of this.visibleSet) {
             if (sprite.contains(testX, testY))
                 return sprite;
         }
@@ -58,6 +70,18 @@ export class SceneGraph {
             this.visibleSet.push(sprite);
         }
 
+        for (let circle of this.gradientCircles) {
+            this.visibleSet.push(circle);
+        }
+
         return this.visibleSet;
+    }
+
+    public getAnimatedSprites() : Array<AnimatedSprite>{
+        return this.animatedSprites;
+    }
+
+    public getGradientCircles() : Array<GradientCircle>{
+        return this.gradientCircles;
     }
 }

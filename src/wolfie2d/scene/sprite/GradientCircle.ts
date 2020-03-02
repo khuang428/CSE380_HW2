@@ -1,7 +1,7 @@
 import {SceneObject} from '../SceneObject'
 
 export class GradientCircle extends SceneObject {
-    private diameter : number;
+    private diameter : number = 250;
     public constructor(){
         super();
     }
