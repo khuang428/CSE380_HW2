@@ -12,6 +12,7 @@ import {ResourceManager} from './files/ResourceManager'
 import {UIController} from './ui/UIController'
 import { TextToRender } from './rendering/TextRenderer'
 import { SceneObject } from './scene/SceneObject'
+import { GradientCircle } from './scene/sprite/GradientCircle'
 
 
 export class Game extends GameLoopTemplate {
@@ -51,6 +52,30 @@ export class Game extends GameLoopTemplate {
     public draw(interpolationPercentage : number) : void {
         // GET THE VISIBLE SET FROM THE SCENE GRAPH
         this.sceneGraph.scope();
+
+        let location = this.sceneGraph.getObjMakeLocation();
+        if(location != null){
+            let rand = Math.random();
+            if(rand < 0.33){
+                let circleToAdd = new GradientCircle();
+                circleToAdd.getPosition().setX(location[0] - circleToAdd.getDiameter()/2);
+                circleToAdd.getPosition().setY(location[1] - circleToAdd.getDiameter()/2);
+                this.sceneGraph.addGradientCircle(circleToAdd);
+            }else if(rand < 0.66){
+                let spriteType = this.resourceManager.getAnimatedSpriteTypeById('resources/animated_sprites/RedCircleMan.json');
+                let spriteToAdd = new AnimatedSprite(spriteType,'FORWARD');
+                spriteToAdd.getPosition().setX(location[0] - (spriteType.getSpriteWidth()/2));
+                spriteToAdd.getPosition().setY(location[1] - (spriteType.getSpriteHeight()/2));
+                this.sceneGraph.addAnimatedSprite(spriteToAdd);
+            }else{
+                let spriteType = this.resourceManager.getAnimatedSpriteTypeById('resources/animated_sprites/MultiColorBlock.json');
+                let spriteToAdd = new AnimatedSprite(spriteType,'FORWARD');
+                spriteToAdd.getPosition().setX(location[0] - (spriteType.getSpriteWidth()/2));
+                spriteToAdd.getPosition().setY(location[1] - (spriteType.getSpriteHeight()/2));
+                this.sceneGraph.addAnimatedSprite(spriteToAdd);
+            }
+            this.sceneGraph.setObjMakeLocation(null);
+        }
 
         // RENDER THE VISIBLE SET, WHICH SHOULD ALL BE RENDERABLE
         this.renderingSystem.render(this.sceneGraph.getAnimatedSprites(), this.sceneGraph.getGradientCircles());

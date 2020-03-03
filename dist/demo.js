@@ -146,8 +146,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var GameLoopTemplate_1 = require("./loop/GameLoopTemplate");
 var WebGLGameRenderingSystem_1 = require("./rendering/WebGLGameRenderingSystem");
 var SceneGraph_1 = require("./scene/SceneGraph");
+var AnimatedSprite_1 = require("./scene/sprite/AnimatedSprite");
 var ResourceManager_1 = require("./files/ResourceManager");
 var UIController_1 = require("./ui/UIController");
+var GradientCircle_1 = require("./scene/sprite/GradientCircle");
 
 var Game = function (_GameLoopTemplate_1$G) {
     _inherits(Game, _GameLoopTemplate_1$G);
@@ -198,6 +200,29 @@ var Game = function (_GameLoopTemplate_1$G) {
         value: function draw(interpolationPercentage) {
             // GET THE VISIBLE SET FROM THE SCENE GRAPH
             this.sceneGraph.scope();
+            var location = this.sceneGraph.getObjMakeLocation();
+            if (location != null) {
+                var rand = Math.random();
+                if (rand < 0.33) {
+                    var circleToAdd = new GradientCircle_1.GradientCircle();
+                    circleToAdd.getPosition().setX(location[0] - circleToAdd.getDiameter() / 2);
+                    circleToAdd.getPosition().setY(location[1] - circleToAdd.getDiameter() / 2);
+                    this.sceneGraph.addGradientCircle(circleToAdd);
+                } else if (rand < 0.66) {
+                    var spriteType = this.resourceManager.getAnimatedSpriteTypeById('resources/animated_sprites/RedCircleMan.json');
+                    var spriteToAdd = new AnimatedSprite_1.AnimatedSprite(spriteType, 'FORWARD');
+                    spriteToAdd.getPosition().setX(location[0] - spriteType.getSpriteWidth() / 2);
+                    spriteToAdd.getPosition().setY(location[1] - spriteType.getSpriteHeight() / 2);
+                    this.sceneGraph.addAnimatedSprite(spriteToAdd);
+                } else {
+                    var _spriteType = this.resourceManager.getAnimatedSpriteTypeById('resources/animated_sprites/MultiColorBlock.json');
+                    var _spriteToAdd = new AnimatedSprite_1.AnimatedSprite(_spriteType, 'FORWARD');
+                    _spriteToAdd.getPosition().setX(location[0] - _spriteType.getSpriteWidth() / 2);
+                    _spriteToAdd.getPosition().setY(location[1] - _spriteType.getSpriteHeight() / 2);
+                    this.sceneGraph.addAnimatedSprite(_spriteToAdd);
+                }
+                this.sceneGraph.setObjMakeLocation(null);
+            }
             // RENDER THE VISIBLE SET, WHICH SHOULD ALL BE RENDERABLE
             this.renderingSystem.render(this.sceneGraph.getAnimatedSprites(), this.sceneGraph.getGradientCircles());
         }
@@ -229,7 +254,7 @@ var Game = function (_GameLoopTemplate_1$G) {
 
 exports.Game = Game;
 
-},{"./files/ResourceManager":3,"./loop/GameLoopTemplate":4,"./rendering/WebGLGameRenderingSystem":10,"./scene/SceneGraph":14,"./ui/UIController":19}],3:[function(require,module,exports){
+},{"./files/ResourceManager":3,"./loop/GameLoopTemplate":4,"./rendering/WebGLGameRenderingSystem":10,"./scene/SceneGraph":14,"./scene/sprite/AnimatedSprite":16,"./scene/sprite/GradientCircle":18,"./ui/UIController":19}],3:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -2191,6 +2216,16 @@ var SceneGraph = function () {
         value: function setObjectToShowInfo(obj) {
             this.objectToShowInfo = obj;
         }
+    }, {
+        key: "getObjMakeLocation",
+        value: function getObjMakeLocation() {
+            return this.objMakeLocation;
+        }
+    }, {
+        key: "setObjMakeLocation",
+        value: function setObjMakeLocation(coords) {
+            this.objMakeLocation = coords;
+        }
         /**
          * update
          *
@@ -2623,7 +2658,6 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var GradientCircle_1 = require("../scene/sprite/GradientCircle");
 
 var UIController = function () {
     function UIController() {
@@ -2644,6 +2678,7 @@ var UIController = function () {
                 console.log("I'm deleting the circle " + circle);
                 _this.scene.deleteGradientCircle(circle);
             }
+            _this.scene.setObjectToShowInfo(null);
         };
         this.mouseClickHandler = function (event) {
             var mousePressX = event.clientX;
@@ -2652,22 +2687,9 @@ var UIController = function () {
             var circle = _this.scene.getCircleAt(mousePressX, mousePressY);
             if (sprite == null && circle == null) {
                 console.log("I'm making an object at " + mousePressX + ", " + mousePressY);
-                var randnum = Math.random();
-                if (randnum < 0.33) {
-                    var circleToAdd = new GradientCircle_1.GradientCircle();
-                    circleToAdd.getPosition().set(mousePressX - circleToAdd.getDiameter() / 2, mousePressY - circleToAdd.getDiameter() / 2, 0.0, 1.0);
-                    _this.scene.addGradientCircle(circleToAdd);
-                } /*else if(randnum < 0.66){
-                    let animatedSpriteType : AnimatedSpriteType =
-                    let spriteToAdd : AnimatedSprite = new AnimatedSprite(animatedSpriteType, 'FORWARD');
-                    spriteToAdd.getPosition().set(mousePressX, mousePressY, 0.0,1.0);
-                    this.scene.addAnimatedSprite(spriteToAdd);
-                  }else{
-                    let animatedSpriteType : AnimatedSpriteType =
-                    let spriteToAdd : AnimatedSprite = new AnimatedSprite(animatedSpriteType, 'FORWARD');
-                    spriteToAdd.getPosition().set(mousePressX, mousePressY, 0.0,1.0);
-                    this.scene.addAnimatedSprite(spriteToAdd);
-                  }*/
+                _this.scene.setObjMakeLocation([mousePressX, mousePressY]);
+            } else {
+                _this.scene.setObjMakeLocation(null);
             }
         };
         this.mouseDownHandler = function (event) {
@@ -2709,9 +2731,6 @@ var UIController = function () {
                 }
             }
         };
-        this.getObjectToShowInfo = function () {
-            return _this.objectToShowInfo;
-        };
         this.mouseUpHandler = function (event) {
             _this.objectToDrag = null;
         };
@@ -2738,6 +2757,6 @@ var UIController = function () {
 
 exports.UIController = UIController;
 
-},{"../scene/sprite/GradientCircle":18}]},{},[1])
+},{}]},{},[1])
 
 //# sourceMappingURL=demo.js.map

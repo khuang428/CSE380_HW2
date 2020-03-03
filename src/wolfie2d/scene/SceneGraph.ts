@@ -10,6 +10,7 @@ export class SceneGraph {
 
     private gradientCircles : Array<GradientCircle>;
     private objectToShowInfo : SceneObject;
+    private objMakeLocation : Array<number>;
 
     // SET OF VISIBLE OBJECTS, NOTE THAT AT THE MOMENT OUR
     // SCENE GRAPH IS QUITE SIMPLE, SO THIS IS THE SAME AS
@@ -69,6 +70,14 @@ export class SceneGraph {
 
     public setObjectToShowInfo(obj : SceneObject) : void{
         this.objectToShowInfo = obj;
+    }
+
+    public getObjMakeLocation() : Array<number> {
+        return this.objMakeLocation;
+    }
+
+    public setObjMakeLocation(coords : Array<number>) : void{
+        this.objMakeLocation = coords;
     }
 
     /**

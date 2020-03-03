@@ -8,7 +8,6 @@ import { GradientCircle } from "../scene/sprite/GradientCircle";
 
 export class UIController {
     private objectToDrag : SceneObject;
-    private objectToShowInfo : SceneObject;
     private scene : SceneGraph;
     private dragOffsetX : number;
     private dragOffsetY : number;
@@ -42,6 +41,7 @@ export class UIController {
             console.log(`I'm deleting the circle ${circle}`);
             this.scene.deleteGradientCircle(circle);
         }
+        this.scene.setObjectToShowInfo(null);
     }
 
     public mouseClickHandler = (event: MouseEvent) : void => {
@@ -51,22 +51,9 @@ export class UIController {
         let circle : GradientCircle = this.scene.getCircleAt(mousePressX, mousePressY);
         if(sprite == null && circle == null){
             console.log(`I'm making an object at ${mousePressX}, ${mousePressY}`);
-            let randnum = Math.random();
-            if(randnum < 0.33){
-                let circleToAdd : GradientCircle = new GradientCircle();
-                circleToAdd.getPosition().set(mousePressX - (circleToAdd.getDiameter()/2), mousePressY - (circleToAdd.getDiameter()/2), 0.0,1.0);
-                this.scene.addGradientCircle(circleToAdd);
-            }/*else if(randnum < 0.66){
-                let animatedSpriteType : AnimatedSpriteType = 
-                let spriteToAdd : AnimatedSprite = new AnimatedSprite(animatedSpriteType, 'FORWARD');
-                spriteToAdd.getPosition().set(mousePressX, mousePressY, 0.0,1.0);
-                this.scene.addAnimatedSprite(spriteToAdd);
-            }else{
-                let animatedSpriteType : AnimatedSpriteType =
-                let spriteToAdd : AnimatedSprite = new AnimatedSprite(animatedSpriteType, 'FORWARD');
-                spriteToAdd.getPosition().set(mousePressX, mousePressY, 0.0,1.0);
-                this.scene.addAnimatedSprite(spriteToAdd);
-            }*/
+            this.scene.setObjMakeLocation([mousePressX, mousePressY]);
+        }else{
+            this.scene.setObjMakeLocation(null);
         }
     }
 
@@ -112,10 +99,6 @@ export class UIController {
                 this.scene.setObjectToShowInfo(null);
             }
         }
-    }
-
-    public getObjectToShowInfo = () : SceneObject => {
-        return this.objectToShowInfo;
     }
 
     public mouseUpHandler = (event : MouseEvent) : void => {
