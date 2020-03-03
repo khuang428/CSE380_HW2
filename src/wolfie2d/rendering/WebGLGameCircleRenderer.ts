@@ -8,6 +8,7 @@ import {HashTable} from '../data/HashTable'
 var CircleDefaults = {
     A_POSITION: "a_Position",
     A_VALUE_TO_INTERPOLATE: "a_ValueToInterpolate",
+    U_COLOR : "u_Color",
     U_SPRITE_TRANSFORM: "u_SpriteTransform",
     NUM_VERTICES: 4,
     FLOATS_PER_VERTEX: 2,
@@ -18,6 +19,7 @@ var CircleDefaults = {
 
 export class WebGLGameCircleRenderer{
     private shader : WebGLGameShader;
+    private vertexTexCoordBuffer : WebGLBuffer;
 
     private spriteTransform : Matrix;
     private spriteTranslate : Vector3;
@@ -31,6 +33,7 @@ export class WebGLGameCircleRenderer{
 
     public init(webGL : WebGLRenderingContext) : void {
         this.shader = new WebGLGameShader();
+        
         var vertexShaderSource =
             'precision highp float;\n' +
             'attribute vec4 ' + CircleDefaults.A_POSITION + ';\n' +
@@ -43,6 +46,7 @@ export class WebGLGameCircleRenderer{
             '}\n';
         var fragmentShaderSource =
             'precision highp float;\n' +
+            'uniform vec3 ' + CircleDefaults.U_COLOR + ";\n" +
             'varying vec2 val;\n' +
             'void main() {\n' +
             '  float R = 0.5;\n' +
@@ -51,14 +55,30 @@ export class WebGLGameCircleRenderer{
             '  if(dist > R){\n' +
             '    discard;\n' +
             '  }\n' +
-            '  gl_FragColor = vec4(0.0, 0.0, dist, alpha);\n' +
+            '  gl_FragColor = vec4(' + CircleDefaults.U_COLOR + ' * dist, alpha);\n' +
             '}\n';
         this.shader.init(webGL, vertexShaderSource, fragmentShaderSource);
+
+        var verticesTexCoords = new Float32Array([
+            -0.5,  0.5, 0.0, 0.0,
+            -0.5, -0.5, 0.0, 1.0,
+             0.5,  0.5, 1.0, 0.0,
+             0.5, -0.5, 1.0, 1.0
+        ]);
+
+        // CREATE THE BUFFER ON THE GPU
+        this.vertexTexCoordBuffer = webGL.createBuffer();
+
+        // BIND THE BUFFER TO BE VERTEX DATA
+        webGL.bindBuffer(webGL.ARRAY_BUFFER, this.vertexTexCoordBuffer);
+
+        // AND SEND THE DATA TO THE BUFFER WE CREATED ON THE GPU
+        webGL.bufferData(webGL.ARRAY_BUFFER, verticesTexCoords, webGL.STATIC_DRAW);
 
         this.webGLAttributeLocations = {};
         this.webGLUniformLocations = {};
         this.loadAttributeLocations(webGL, [CircleDefaults.A_POSITION, CircleDefaults.A_VALUE_TO_INTERPOLATE]);
-        this.loadUniformLocations(webGL, [CircleDefaults.U_SPRITE_TRANSFORM]);
+        this.loadUniformLocations(webGL, [CircleDefaults.U_COLOR, CircleDefaults.U_SPRITE_TRANSFORM]);
 
         this.spriteTransform = new Matrix(4, 4);
         this.spriteTranslate = new Vector3();
@@ -116,6 +136,8 @@ export class WebGLGameCircleRenderer{
         MathUtilities.identity(this.spriteTransform);
         MathUtilities.model(this.spriteTransform, this.spriteTranslate, this.spriteRotate, this.spriteScale);
 
+        webGL.bindBuffer(webGL.ARRAY_BUFFER, this.vertexTexCoordBuffer);
+
         // HOOK UP THE ATTRIBUTES
         let a_PositionLocation : GLuint = this.webGLAttributeLocations[CircleDefaults.A_POSITION];
         webGL.vertexAttribPointer(a_PositionLocation, CircleDefaults.FLOATS_PER_VERTEX, webGL.FLOAT, false, CircleDefaults.TOTAL_BYTES, CircleDefaults.VERTEX_POSITION_OFFSET);
@@ -123,12 +145,13 @@ export class WebGLGameCircleRenderer{
         let a_ValueToInterpolate : GLuint = this.webGLAttributeLocations[CircleDefaults.A_VALUE_TO_INTERPOLATE];
         webGL.vertexAttribPointer(a_ValueToInterpolate, CircleDefaults.FLOATS_PER_VERTEX, webGL.FLOAT, false, CircleDefaults.TOTAL_BYTES, CircleDefaults.VERTEX_POSITION_OFFSET);
         webGL.enableVertexAttribArray(a_ValueToInterpolate);
-        
 
 
         // USE THE UNIFORMS
         let u_SpriteTransformLocation : WebGLUniformLocation = this.webGLUniformLocations[CircleDefaults.U_SPRITE_TRANSFORM];
         webGL.uniformMatrix4fv(u_SpriteTransformLocation, false, this.spriteTransform.getData());
+        let u_Color : WebGLUniformLocation = this.webGLUniformLocations[CircleDefaults.U_COLOR];
+        webGL.uniform3fv(u_Color, circle.getColor());
         
         // DRAW THE SPRITE AS A TRIANGLE STRIP USING 4 VERTICES, STARTING AT THE START OF THE ARRAY (index 0)
         webGL.drawArrays(webGL.TRIANGLE_STRIP, CircleDefaults.INDEX_OF_FIRST_VERTEX, CircleDefaults.NUM_VERTICES);

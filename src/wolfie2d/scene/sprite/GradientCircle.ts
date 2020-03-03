@@ -2,8 +2,11 @@ import {SceneObject} from '../SceneObject'
 
 export class GradientCircle extends SceneObject {
     private diameter : number = 256;
+    private static colors : Array<Array<number>> = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 1.0, 0.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0]];
+    private color : Array<number>;
     public constructor(){
         super();
+        this.color = GradientCircle.colors[Math.floor(Math.random() * GradientCircle.colors.length)];
     }
 
     public contains(pointX : number, pointY : number) : boolean {
@@ -21,12 +24,15 @@ export class GradientCircle extends SceneObject {
         return this.diameter;
     }
 
+    public getColor() : Array<number> {
+        return this.color;
+    }
 
     public toString() : string {
 
         let summary : string =  "{ position: ("
                             +   this.getPosition().getX() + ", " + this.getPosition().getY() + "),  "
-                            +   "color: () }";
+                            +   "color: (" + this.color[0] + ", " + this.color[1] + ", " + this.color[2] + ") }";
         return summary;
     }
 }
