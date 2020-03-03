@@ -2642,7 +2642,7 @@ var GradientCircle = function (_SceneObject_1$SceneO) {
     }, {
         key: "toString",
         value: function toString() {
-            var summary = "{ position: (" + this.getPosition().getX() + ", " + this.getPosition().getY() + "),  " + "color: (" + this.color[0] + ", " + this.color[1] + ", " + this.color[2] + ") }";
+            var summary = "{ position: (" + this.getPosition().getX() + ", " + this.getPosition().getY() + "),  " + "color: rgb(" + this.color[0] + ", " + this.color[1] + ", " + this.color[2] + ") }";
             return summary;
         }
     }]);
