@@ -208,18 +208,21 @@ var Game = function (_GameLoopTemplate_1$G) {
                     circleToAdd.getPosition().setX(location[0] - circleToAdd.getDiameter() / 2);
                     circleToAdd.getPosition().setY(location[1] - circleToAdd.getDiameter() / 2);
                     this.sceneGraph.addGradientCircle(circleToAdd);
+                    this.sceneGraph.setObjectToShowInfo(circleToAdd);
                 } else if (rand < 0.66) {
                     var spriteType = this.resourceManager.getAnimatedSpriteTypeById('resources/animated_sprites/RedCircleMan.json');
                     var spriteToAdd = new AnimatedSprite_1.AnimatedSprite(spriteType, 'FORWARD');
                     spriteToAdd.getPosition().setX(location[0] - spriteType.getSpriteWidth() / 2);
                     spriteToAdd.getPosition().setY(location[1] - spriteType.getSpriteHeight() / 2);
                     this.sceneGraph.addAnimatedSprite(spriteToAdd);
+                    this.sceneGraph.setObjectToShowInfo(spriteToAdd);
                 } else {
                     var _spriteType = this.resourceManager.getAnimatedSpriteTypeById('resources/animated_sprites/MultiColorBlock.json');
                     var _spriteToAdd = new AnimatedSprite_1.AnimatedSprite(_spriteType, 'FORWARD');
                     _spriteToAdd.getPosition().setX(location[0] - _spriteType.getSpriteWidth() / 2);
                     _spriteToAdd.getPosition().setY(location[1] - _spriteType.getSpriteHeight() / 2);
                     this.sceneGraph.addAnimatedSprite(_spriteToAdd);
+                    this.sceneGraph.setObjectToShowInfo(_spriteToAdd);
                 }
                 this.sceneGraph.setObjMakeLocation(null);
             }
