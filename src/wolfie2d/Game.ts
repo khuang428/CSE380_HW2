@@ -10,7 +10,9 @@ import {SceneGraph} from './scene/SceneGraph'
 import {AnimatedSprite} from './scene/sprite/AnimatedSprite'
 import {ResourceManager} from './files/ResourceManager'
 import {UIController} from './ui/UIController'
+import { TextToRender } from './rendering/TextRenderer'
 import { SceneObject } from './scene/SceneObject'
+
 
 export class Game extends GameLoopTemplate {
     private resourceManager : ResourceManager = new ResourceManager();
@@ -52,6 +54,7 @@ export class Game extends GameLoopTemplate {
 
         // RENDER THE VISIBLE SET, WHICH SHOULD ALL BE RENDERABLE
         this.renderingSystem.render(this.sceneGraph.getAnimatedSprites(), this.sceneGraph.getGradientCircles());
+        
     }
 
     /**

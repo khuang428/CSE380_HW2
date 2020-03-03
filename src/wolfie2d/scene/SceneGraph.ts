@@ -9,6 +9,7 @@ export class SceneGraph {
     private animatedSprites : Array<AnimatedSprite>;
 
     private gradientCircles : Array<GradientCircle>;
+    private objectToShowInfo : SceneObject;
 
     // SET OF VISIBLE OBJECTS, NOTE THAT AT THE MOMENT OUR
     // SCENE GRAPH IS QUITE SIMPLE, SO THIS IS THE SAME AS
@@ -60,6 +61,14 @@ export class SceneGraph {
                 return circle;
         }
         return null;
+    }
+
+    public getObjectToShowInfo() : SceneObject {
+        return this.objectToShowInfo;
+    }
+
+    public setObjectToShowInfo(obj : SceneObject) : void{
+        this.objectToShowInfo = obj;
     }
 
     /**

@@ -8,6 +8,7 @@ import { GradientCircle } from "../scene/sprite/GradientCircle";
 
 export class UIController {
     private objectToDrag : SceneObject;
+    private objectToShowInfo : SceneObject;
     private scene : SceneGraph;
     private dragOffsetX : number;
     private dragOffsetY : number;
@@ -50,7 +51,22 @@ export class UIController {
         let circle : GradientCircle = this.scene.getCircleAt(mousePressX, mousePressY);
         if(sprite == null && circle == null){
             console.log(`I'm making an object at ${mousePressX}, ${mousePressY}`);
-            //TODO create sprite random one of 3 kinds :o
+            let randnum = Math.random();
+            if(randnum < 0.33){
+                let circleToAdd : GradientCircle = new GradientCircle();
+                circleToAdd.getPosition().set(mousePressX - (circleToAdd.getDiameter()/2), mousePressY - (circleToAdd.getDiameter()/2), 0.0,1.0);
+                this.scene.addGradientCircle(circleToAdd);
+            }/*else if(randnum < 0.66){
+                let animatedSpriteType : AnimatedSpriteType = 
+                let spriteToAdd : AnimatedSprite = new AnimatedSprite(animatedSpriteType, 'FORWARD');
+                spriteToAdd.getPosition().set(mousePressX, mousePressY, 0.0,1.0);
+                this.scene.addAnimatedSprite(spriteToAdd);
+            }else{
+                let animatedSpriteType : AnimatedSpriteType =
+                let spriteToAdd : AnimatedSprite = new AnimatedSprite(animatedSpriteType, 'FORWARD');
+                spriteToAdd.getPosition().set(mousePressX, mousePressY, 0.0,1.0);
+                this.scene.addAnimatedSprite(spriteToAdd);
+            }*/
         }
     }
 
@@ -83,7 +99,23 @@ export class UIController {
                                                 event.clientY + this.dragOffsetY, 
                                                 this.objectToDrag.getPosition().getZ(), 
                                                 this.objectToDrag.getPosition().getW());
+        }else{
+            let mouseX : number = event.clientX;
+            let mouseY : number = event.clientY;
+            let sprite : AnimatedSprite = this.scene.getSpriteAt(mouseX, mouseY);
+            let circle : GradientCircle = this.scene.getCircleAt(mouseX, mouseY);
+            if(sprite != null){
+                this.scene.setObjectToShowInfo(sprite);
+            }else if(circle != null){
+                this.scene.setObjectToShowInfo(circle);
+            }else{
+                this.scene.setObjectToShowInfo(null);
+            }
         }
+    }
+
+    public getObjectToShowInfo = () : SceneObject => {
+        return this.objectToShowInfo;
     }
 
     public mouseUpHandler = (event : MouseEvent) : void => {

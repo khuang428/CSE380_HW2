@@ -95,8 +95,21 @@ class AnimatedSpriteDemo {
         let numSpritesText = new TextToRender("Num Scene Objects", "", 20, 50, function() {
             numSpritesText.text = "Number of Scene Objects: " + (sceneGraph.getNumSprites() + sceneGraph.getNumCircles());
         });
+
+
+        let spriteInfo = new TextToRender("Object Info", "", 20, 100, function() {
+            let obj = game.getSceneGraph().getObjectToShowInfo();
+            if(obj != null){
+                spriteInfo.text = obj.toString();
+            }else{
+                spriteInfo.text = "";
+            }
+            
+        });
+
         let textRenderer = game.getRenderingSystem().getTextRenderer();
         textRenderer.addTextToRender(numSpritesText);
+        textRenderer.addTextToRender(spriteInfo);
     }
 }
 

@@ -86,7 +86,7 @@ export class AnimatedSprite extends SceneObject {
                             +   this.getPosition().getX() + ", " + this.getPosition().getY() + ") "
                             +   "(state: " + this.getState() + ") "
                             +   "(animationFrameIndex: " + this.getAnimationFrameIndex() + ") "
-                            +   "(frameCounter: " + this.getFrameCounter() + ") ";
+                            +   "(frameCounter: " + this.getFrameCounter() + ") }";
         return summary;
     }
 }

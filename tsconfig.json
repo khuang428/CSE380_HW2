@@ -1,6 +1,6 @@
 {
   "files": [
-    "src/sprite_animation_demo/*",
+    "src/animated_sprite_demo/*",
     "src/wolfie2d/data/*",
     "src/wolfie2d/files/*",
     "src/wolfie2d/loop/*",
