@@ -45,7 +45,7 @@ export class WebGLGameCircleRenderer{
             'precision highp float;\n' +
             'varying vec2 val;\n' +
             'void main() {\n' +
-            '  float R = 1.0;\n' +
+            '  float R = 0.5;\n' +
             '  float dist = sqrt(dot(val,val));\n' +
             '  float alpha = 1.0;\n' +
             '  if(dist > R){\n' +
@@ -116,10 +116,20 @@ export class WebGLGameCircleRenderer{
         MathUtilities.identity(this.spriteTransform);
         MathUtilities.model(this.spriteTransform, this.spriteTranslate, this.spriteRotate, this.spriteScale);
 
+        // HOOK UP THE ATTRIBUTES
+        let a_PositionLocation : GLuint = this.webGLAttributeLocations[CircleDefaults.A_POSITION];
+        webGL.vertexAttribPointer(a_PositionLocation, CircleDefaults.FLOATS_PER_VERTEX, webGL.FLOAT, false, CircleDefaults.TOTAL_BYTES, CircleDefaults.VERTEX_POSITION_OFFSET);
+        webGL.enableVertexAttribArray(a_PositionLocation);
+        let a_ValueToInterpolate : GLuint = this.webGLAttributeLocations[CircleDefaults.A_VALUE_TO_INTERPOLATE];
+        webGL.vertexAttribPointer(a_ValueToInterpolate, CircleDefaults.FLOATS_PER_VERTEX, webGL.FLOAT, false, CircleDefaults.TOTAL_BYTES, CircleDefaults.VERTEX_POSITION_OFFSET);
+        webGL.enableVertexAttribArray(a_ValueToInterpolate);
+        
+
+
         // USE THE UNIFORMS
         let u_SpriteTransformLocation : WebGLUniformLocation = this.webGLUniformLocations[CircleDefaults.U_SPRITE_TRANSFORM];
         webGL.uniformMatrix4fv(u_SpriteTransformLocation, false, this.spriteTransform.getData());
-
+        
         // DRAW THE SPRITE AS A TRIANGLE STRIP USING 4 VERTICES, STARTING AT THE START OF THE ARRAY (index 0)
         webGL.drawArrays(webGL.TRIANGLE_STRIP, CircleDefaults.INDEX_OF_FIRST_VERTEX, CircleDefaults.NUM_VERTICES);
         }

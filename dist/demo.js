@@ -1549,7 +1549,7 @@ var WebGLGameCircleRenderer = function () {
         value: function init(webGL) {
             this.shader = new WebGLGameShader_1.WebGLGameShader();
             var vertexShaderSource = 'precision highp float;\n' + 'attribute vec4 ' + CircleDefaults.A_POSITION + ';\n' + 'attribute vec2 ' + CircleDefaults.A_VALUE_TO_INTERPOLATE + ';\n' + 'varying vec2 val;\n' + 'uniform mat4 ' + CircleDefaults.U_SPRITE_TRANSFORM + ';\n' + 'void main() {\n' + '  val = ' + CircleDefaults.A_VALUE_TO_INTERPOLATE + ';\n' + '  gl_Position = ' + CircleDefaults.U_SPRITE_TRANSFORM + ' * ' + CircleDefaults.A_POSITION + ';\n' + '}\n';
-            var fragmentShaderSource = 'precision highp float;\n' + 'varying vec2 val;\n' + 'void main() {\n' + '  float R = 1.0;\n' + '  float dist = sqrt(dot(val,val));\n' + '  float alpha = 1.0;\n' + '  if(dist > R){\n' + '    discard;\n' + '  }\n' + '  gl_FragColor = vec4(0.0, 0.0, dist, alpha);\n' + '}\n';
+            var fragmentShaderSource = 'precision highp float;\n' + 'varying vec2 val;\n' + 'void main() {\n' + '  float R = 0.5;\n' + '  float dist = sqrt(dot(val,val));\n' + '  float alpha = 1.0;\n' + '  if(dist > R){\n' + '    discard;\n' + '  }\n' + '  gl_FragColor = vec4(0.0, 0.0, dist, alpha);\n' + '}\n';
             this.shader.init(webGL, vertexShaderSource, fragmentShaderSource);
             this.webGLAttributeLocations = {};
             this.webGLUniformLocations = {};
@@ -1631,6 +1631,13 @@ var WebGLGameCircleRenderer = function () {
             // @todo - COMBINE THIS WITH THE ROTATE AND SCALE VALUES FROM THE SPRITE
             MathUtilities_1.MathUtilities.identity(this.spriteTransform);
             MathUtilities_1.MathUtilities.model(this.spriteTransform, this.spriteTranslate, this.spriteRotate, this.spriteScale);
+            // HOOK UP THE ATTRIBUTES
+            var a_PositionLocation = this.webGLAttributeLocations[CircleDefaults.A_POSITION];
+            webGL.vertexAttribPointer(a_PositionLocation, CircleDefaults.FLOATS_PER_VERTEX, webGL.FLOAT, false, CircleDefaults.TOTAL_BYTES, CircleDefaults.VERTEX_POSITION_OFFSET);
+            webGL.enableVertexAttribArray(a_PositionLocation);
+            var a_ValueToInterpolate = this.webGLAttributeLocations[CircleDefaults.A_VALUE_TO_INTERPOLATE];
+            webGL.vertexAttribPointer(a_ValueToInterpolate, CircleDefaults.FLOATS_PER_VERTEX, webGL.FLOAT, false, CircleDefaults.TOTAL_BYTES, CircleDefaults.VERTEX_POSITION_OFFSET);
+            webGL.enableVertexAttribArray(a_ValueToInterpolate);
             // USE THE UNIFORMS
             var u_SpriteTransformLocation = this.webGLUniformLocations[CircleDefaults.U_SPRITE_TRANSFORM];
             webGL.uniformMatrix4fv(u_SpriteTransformLocation, false, this.spriteTransform.getData());
@@ -2081,6 +2088,20 @@ var SceneGraph = function () {
             this.gradientCircles.push(circle);
         }
     }, {
+        key: "deleteAnimatedSprite",
+        value: function deleteAnimatedSprite(sprite) {
+            this.animatedSprites = this.animatedSprites.filter(function (s) {
+                return s != sprite;
+            });
+        }
+    }, {
+        key: "deleteGradientCircle",
+        value: function deleteGradientCircle(circle) {
+            this.gradientCircles = this.gradientCircles.filter(function (c) {
+                return c != circle;
+            });
+        }
+    }, {
         key: "getSpriteAt",
         value: function getSpriteAt(testX, testY) {
             var _iteratorNormalCompletion = true;
@@ -2088,7 +2109,7 @@ var SceneGraph = function () {
             var _iteratorError = undefined;
 
             try {
-                for (var _iterator = this.visibleSet[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                for (var _iterator = this.animatedSprites[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                     var sprite = _step.value;
 
                     if (sprite.contains(testX, testY)) return sprite;
@@ -2110,28 +2131,18 @@ var SceneGraph = function () {
 
             return null;
         }
-        /**
-         * update
-         *
-         * Called once per frame, this function updates the state of all the objects
-         * in the scene.
-         *
-         * @param delta The time that has passed since the last time this update
-         * funcation was called.
-         */
-
     }, {
-        key: "update",
-        value: function update(delta) {
+        key: "getCircleAt",
+        value: function getCircleAt(testX, testY) {
             var _iteratorNormalCompletion2 = true;
             var _didIteratorError2 = false;
             var _iteratorError2 = undefined;
 
             try {
-                for (var _iterator2 = this.animatedSprites[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                    var sprite = _step2.value;
+                for (var _iterator2 = this.gradientCircles[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    var circle = _step2.value;
 
-                    sprite.update(delta);
+                    if (circle.contains(testX, testY)) return circle;
                 }
             } catch (err) {
                 _didIteratorError2 = true;
@@ -2147,13 +2158,22 @@ var SceneGraph = function () {
                     }
                 }
             }
+
+            return null;
         }
+        /**
+         * update
+         *
+         * Called once per frame, this function updates the state of all the objects
+         * in the scene.
+         *
+         * @param delta The time that has passed since the last time this update
+         * funcation was called.
+         */
+
     }, {
-        key: "scope",
-        value: function scope() {
-            // CLEAR OUT THE OLD
-            this.visibleSet = [];
-            // PUT ALL THE SCENE OBJECTS INTO THE VISIBLE SET
+        key: "update",
+        value: function update(delta) {
             var _iteratorNormalCompletion3 = true;
             var _didIteratorError3 = false;
             var _iteratorError3 = undefined;
@@ -2162,7 +2182,7 @@ var SceneGraph = function () {
                 for (var _iterator3 = this.animatedSprites[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
                     var sprite = _step3.value;
 
-                    this.visibleSet.push(sprite);
+                    sprite.update(delta);
                 }
             } catch (err) {
                 _didIteratorError3 = true;
@@ -2178,16 +2198,22 @@ var SceneGraph = function () {
                     }
                 }
             }
-
+        }
+    }, {
+        key: "scope",
+        value: function scope() {
+            // CLEAR OUT THE OLD
+            this.visibleSet = [];
+            // PUT ALL THE SCENE OBJECTS INTO THE VISIBLE SET
             var _iteratorNormalCompletion4 = true;
             var _didIteratorError4 = false;
             var _iteratorError4 = undefined;
 
             try {
-                for (var _iterator4 = this.gradientCircles[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-                    var circle = _step4.value;
+                for (var _iterator4 = this.animatedSprites[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+                    var sprite = _step4.value;
 
-                    this.visibleSet.push(circle);
+                    this.visibleSet.push(sprite);
                 }
             } catch (err) {
                 _didIteratorError4 = true;
@@ -2200,6 +2226,31 @@ var SceneGraph = function () {
                 } finally {
                     if (_didIteratorError4) {
                         throw _iteratorError4;
+                    }
+                }
+            }
+
+            var _iteratorNormalCompletion5 = true;
+            var _didIteratorError5 = false;
+            var _iteratorError5 = undefined;
+
+            try {
+                for (var _iterator5 = this.gradientCircles[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                    var circle = _step5.value;
+
+                    this.visibleSet.push(circle);
+                }
+            } catch (err) {
+                _didIteratorError5 = true;
+                _iteratorError5 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                        _iterator5.return();
+                    }
+                } finally {
+                    if (_didIteratorError5) {
+                        throw _iteratorError5;
                     }
                 }
             }
@@ -2494,18 +2545,17 @@ var GradientCircle = function (_SceneObject_1$SceneO) {
 
         var _this = _possibleConstructorReturn(this, (GradientCircle.__proto__ || Object.getPrototypeOf(GradientCircle)).call(this));
 
-        _this.diameter = 250;
+        _this.diameter = 256;
+        _this.color = GradientCircle.colors[Math.random() * (GradientCircle.colors.length - 1)];
         return _this;
     }
 
     _createClass(GradientCircle, [{
         key: "contains",
         value: function contains(pointX, pointY) {
-            var spriteLeft = this.getPosition().getX();
-            var spriteRight = this.getPosition().getX() + this.diameter;
-            var spriteTop = this.getPosition().getY();
-            var spriteBottom = this.getPosition().getY() + this.diameter;
-            if (pointX < spriteLeft || spriteRight < pointX || pointY < spriteTop || spriteBottom < pointY) {
+            var centerX = this.getPosition().getX() + this.getDiameter() / 2;
+            var centerY = this.getPosition().getY() + this.getDiameter() / 2;
+            if (Math.sqrt(Math.pow(pointX - centerX, 2) + Math.pow(pointY - centerY, 2)) > this.getDiameter() / 2) {
                 return false;
             } else {
                 return true;
@@ -2516,12 +2566,41 @@ var GradientCircle = function (_SceneObject_1$SceneO) {
         value: function getDiameter() {
             return this.diameter;
         }
+    }, {
+        key: "getColor",
+        value: function getColor() {
+            return this.color;
+        }
+    }, {
+        key: "toString",
+        value: function toString() {
+            var colorRGB = "";
+            switch (this.getColor()) {
+                case "red":
+                    break;
+                case "green":
+                    break;
+                case "blue":
+                    break;
+                case "yellow":
+                    break;
+                case "cyan":
+                    break;
+                case "magenta":
+                    break;
+                default:
+                    break;
+            }
+            var summary = "{ position: (" + this.getPosition().getX() + ", " + this.getPosition().getY() + ") " + "(color: " + colorRGB + ") ";
+            return summary;
+        }
     }]);
 
     return GradientCircle;
 }(SceneObject_1.SceneObject);
 
 exports.GradientCircle = GradientCircle;
+GradientCircle.colors = ["red", "green", "blue", "yellow", "cyan", "magenta"];
 
 },{"../SceneObject":15}],19:[function(require,module,exports){
 "use strict";
@@ -2542,49 +2621,62 @@ var UIController = function () {
             var mousePressX = event.clientX;
             var mousePressY = event.clientY;
             var sprite = _this.scene.getSpriteAt(mousePressX, mousePressY);
+            var circle = _this.scene.getCircleAt(mousePressX, mousePressY);
             if (sprite != null) {
                 console.log("I'm deleting the sprite " + sprite);
-                //TODO remove sprite
+                _this.scene.deleteAnimatedSprite(sprite);
+            }
+            if (circle != null) {
+                console.log("I'm deleting the circle " + circle);
+                _this.scene.deleteGradientCircle(circle);
             }
         };
         this.mouseClickHandler = function (event) {
             var mousePressX = event.clientX;
             var mousePressY = event.clientY;
             var sprite = _this.scene.getSpriteAt(mousePressX, mousePressY);
-            if (sprite == null) {
-                console.log("I'm making a sprite at " + mousePressX + ", " + mousePressY);
+            var circle = _this.scene.getCircleAt(mousePressX, mousePressY);
+            if (sprite == null && circle == null) {
+                console.log("I'm making an object at " + mousePressX + ", " + mousePressY);
                 //TODO create sprite random one of 3 kinds :o
             }
         };
         this.mouseDownHandler = function (event) {
-            event.stopImmediatePropagation();
             var mousePressX = event.clientX;
             var mousePressY = event.clientY;
             var sprite = _this.scene.getSpriteAt(mousePressX, mousePressY);
+            var circle = _this.scene.getCircleAt(mousePressX, mousePressY);
             console.log("mousePressX: " + mousePressX);
             console.log("mousePressY: " + mousePressY);
-            console.log("sprite: " + sprite);
             if (sprite != null) {
                 // START DRAGGING IT
-                _this.spriteToDrag = sprite;
+                console.log("sprite: " + sprite);
+                _this.objectToDrag = sprite;
                 _this.dragOffsetX = sprite.getPosition().getX() - mousePressX;
                 _this.dragOffsetY = sprite.getPosition().getY() - mousePressY;
             }
+            if (circle != null) {
+                // START DRAGGING IT
+                console.log("circle: " + circle);
+                _this.objectToDrag = circle;
+                _this.dragOffsetX = circle.getPosition().getX() - mousePressX;
+                _this.dragOffsetY = circle.getPosition().getY() - mousePressY;
+            }
         };
         this.mouseMoveHandler = function (event) {
-            if (_this.spriteToDrag != null) {
-                _this.spriteToDrag.getPosition().set(event.clientX + _this.dragOffsetX, event.clientY + _this.dragOffsetY, _this.spriteToDrag.getPosition().getZ(), _this.spriteToDrag.getPosition().getW());
+            if (_this.objectToDrag != null) {
+                _this.objectToDrag.getPosition().set(event.clientX + _this.dragOffsetX, event.clientY + _this.dragOffsetY, _this.objectToDrag.getPosition().getZ(), _this.objectToDrag.getPosition().getW());
             }
         };
         this.mouseUpHandler = function (event) {
-            _this.spriteToDrag = null;
+            _this.objectToDrag = null;
         };
     }
 
     _createClass(UIController, [{
         key: "init",
         value: function init(canvasId, initScene) {
-            this.spriteToDrag = null;
+            this.objectToDrag = null;
             this.scene = initScene;
             this.dragOffsetX = -1;
             this.dragOffsetY = -1;

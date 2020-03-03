@@ -1,12 +1,13 @@
 /*
  * This provides responses to UI input.
  */
-import {AnimatedSprite} from "../scene/sprite/AnimatedSprite"
 import {SceneGraph} from "../scene/SceneGraph"
 import { SceneObject } from "../scene/SceneObject";
+import { AnimatedSprite } from "../scene/sprite/AnimatedSprite";
+import { GradientCircle } from "../scene/sprite/GradientCircle";
 
 export class UIController {
-    private spriteToDrag : SceneObject;
+    private objectToDrag : SceneObject;
     private scene : SceneGraph;
     private dragOffsetX : number;
     private dragOffsetY : number;
@@ -14,7 +15,7 @@ export class UIController {
     public constructor() {}
 
     public init(canvasId : string, initScene : SceneGraph) : void {
-        this.spriteToDrag = null;
+        this.objectToDrag = null;
         this.scene = initScene;
         this.dragOffsetX = -1;
         this.dragOffsetY = -1;
@@ -30,19 +31,25 @@ export class UIController {
     public mouseDClickHandler = (event: MouseEvent) : void => {
         let mousePressX : number = event.clientX;
         let mousePressY : number = event.clientY;
-        let sprite : SceneObject = this.scene.getSpriteAt(mousePressX, mousePressY);
+        let sprite : AnimatedSprite = this.scene.getSpriteAt(mousePressX, mousePressY);
+        let circle : GradientCircle = this.scene.getCircleAt(mousePressX, mousePressY);
         if(sprite != null){
             console.log(`I'm deleting the sprite ${sprite}`);
-            //TODO remove sprite
+            this.scene.deleteAnimatedSprite(sprite);
+        }
+        if(circle != null){
+            console.log(`I'm deleting the circle ${circle}`);
+            this.scene.deleteGradientCircle(circle);
         }
     }
 
     public mouseClickHandler = (event: MouseEvent) : void => {
         let mousePressX : number = event.clientX;
         let mousePressY : number = event.clientY;
-        let sprite : SceneObject = this.scene.getSpriteAt(mousePressX, mousePressY);
-        if(sprite == null){
-            console.log(`I'm making a sprite at ${mousePressX}, ${mousePressY}`);
+        let sprite : AnimatedSprite = this.scene.getSpriteAt(mousePressX, mousePressY);
+        let circle : GradientCircle = this.scene.getCircleAt(mousePressX, mousePressY);
+        if(sprite == null && circle == null){
+            console.log(`I'm making an object at ${mousePressX}, ${mousePressY}`);
             //TODO create sprite random one of 3 kinds :o
         }
     }
@@ -50,28 +57,36 @@ export class UIController {
     public mouseDownHandler = (event : MouseEvent) : void => {
         let mousePressX : number = event.clientX;
         let mousePressY : number = event.clientY;
-        let sprite : SceneObject = this.scene.getSpriteAt(mousePressX, mousePressY);
+        let sprite : AnimatedSprite = this.scene.getSpriteAt(mousePressX, mousePressY);
+        let circle : GradientCircle = this.scene.getCircleAt(mousePressX, mousePressY);
         console.log("mousePressX: " + mousePressX);
         console.log("mousePressY: " + mousePressY);
-        console.log("sprite: " + sprite);
         if (sprite != null) {
             // START DRAGGING IT
-            this.spriteToDrag = sprite;
+            console.log("sprite: " + sprite);
+            this.objectToDrag = sprite;
             this.dragOffsetX = sprite.getPosition().getX() - mousePressX;
             this.dragOffsetY = sprite.getPosition().getY() - mousePressY;
+        }
+        if (circle != null) {
+            // START DRAGGING IT
+            console.log("circle: " + circle);
+            this.objectToDrag = circle;
+            this.dragOffsetX = circle.getPosition().getX() - mousePressX;
+            this.dragOffsetY = circle.getPosition().getY() - mousePressY;
         }
     }
     
     public mouseMoveHandler = (event : MouseEvent) : void => {
-        if (this.spriteToDrag != null) {
-            this.spriteToDrag.getPosition().set(event.clientX + this.dragOffsetX, 
+        if (this.objectToDrag != null) {
+            this.objectToDrag.getPosition().set(event.clientX + this.dragOffsetX, 
                                                 event.clientY + this.dragOffsetY, 
-                                                this.spriteToDrag.getPosition().getZ(), 
-                                                this.spriteToDrag.getPosition().getW());
+                                                this.objectToDrag.getPosition().getZ(), 
+                                                this.objectToDrag.getPosition().getW());
         }
     }
 
     public mouseUpHandler = (event : MouseEvent) : void => {
-        this.spriteToDrag = null;
+        this.objectToDrag = null;
     }
 }

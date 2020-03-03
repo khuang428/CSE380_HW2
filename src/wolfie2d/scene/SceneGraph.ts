@@ -38,10 +38,26 @@ export class SceneGraph {
         this.gradientCircles.push(circle);
     }
 
-    public getSpriteAt(testX : number, testY : number) : SceneObject {
-        for (let sprite of this.visibleSet) {
+    public deleteAnimatedSprite(sprite : AnimatedSprite) : void {
+        this.animatedSprites = this.animatedSprites.filter(function(s){ return s != sprite});
+    }
+
+    public deleteGradientCircle(circle : GradientCircle) : void {
+        this.gradientCircles = this.gradientCircles.filter(function(c){return c != circle});
+    }
+
+    public getSpriteAt(testX : number, testY : number) : AnimatedSprite {
+        for (let sprite of this.animatedSprites) {
             if (sprite.contains(testX, testY))
                 return sprite;
+        }
+        return null;
+    }
+
+    public getCircleAt(testX : number, testY : number) : GradientCircle {
+        for (let circle of this.gradientCircles) {
+            if (circle.contains(testX, testY))
+                return circle;
         }
         return null;
     }
